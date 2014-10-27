@@ -217,7 +217,8 @@ build_arg_parser = at.build_arg_parser([
             "Where to get key:value configuration.  Can be:"
             "\n 1) a directory containing json files"
             "\n 2) a consul url to keys the same config that json files"
-            " would contain.  ie. http://127.0.0.1:8500/v1/kv/conf")),
+            " would contain.  ie. http://127.0.0.1:8500/v1/kv/conf"),
+        required=not os.environ.get('CONSULCONF_INPUT')),
     at.group(
         "\nWhere to send key:value configuration",
         at.mutually_exclusive(
