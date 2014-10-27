@@ -1,0 +1,5 @@
+{
+  "cmd": "rm -rf *egg ; python setup.py bdist_egg -d . && mv *egg consulconf.egg ",
+  "files": ["consulconf.egg"]
+}
+

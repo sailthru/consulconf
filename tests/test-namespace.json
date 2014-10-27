@@ -1,0 +1,5 @@
+{
+  "_shared": {"key1": "val11"},
+  "_shared2": {"key2": "val22"},
+  "_shared3": {"key2": "val222", "key3": "val3"}
+}
