@@ -115,9 +115,7 @@ def load_json(jsonfn, basepath):
             curdct = jsondata
             while len(levels) > 1:
                 lastkey = levels.pop(0)
-                newdct = {}
-                curdct[lastkey] = newdct
-                curdct = newdct
+                curdct = curdct.setdefault(lastkey, {})
             if v:
                 curdct[levels.pop(0)] = v
             else:
