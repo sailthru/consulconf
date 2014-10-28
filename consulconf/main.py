@@ -3,10 +3,12 @@
 This script generates application key:value configuration
 """
 import argparse_tools as at
+import base64
 import glob
 import json
 from os.path import basename, join
 import os
+import re
 import requests
 import subprocess
 
@@ -97,12 +99,29 @@ def load_json(jsonfn, basepath):
     fp = join(basepath, jsonfn)
     log.debug('load json data', extra=dict(basepath=fp))
     if basepath.startswith('http://'):
-        resp = requests.get(fp, params={'recurse': True})
+        resp = requests.get('%s/' % fp.rstrip('/'), params={'recurse': True})
         if not resp.ok:
             raise APIFail(
                 'Failed to get key:value data from Consul: %s' % resp.content)
-        jsondata = {x['Key'].rstrip('/').split('/')[-1]: x['Value']
-                    for x in resp.json()}
+        _jsondata = (
+            (re.sub('.*?/%s/(.*?)/?$' % jsonfn, r'\1', x['Key']),
+             base64.b64decode(x['Value'] or ''))
+            for x in resp.json())
+        jsondata = {}
+        for k, v in _jsondata:
+            if not k:
+                continue
+            levels = k.split('/')
+            curdct = jsondata
+            while len(levels) > 1:
+                lastkey = levels.pop(0)
+                newdct = {}
+                curdct[lastkey] = newdct
+                curdct = newdct
+            if v:
+                curdct[levels.pop(0)] = v
+            else:
+                curdct[levels.pop(0)] = {}
     else:  # assume its a local filepath
         if not fp.endswith('.json'):
             log.debug(
