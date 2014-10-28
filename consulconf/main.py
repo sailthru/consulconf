@@ -116,6 +116,9 @@ def load_json(jsonfn, basepath):
             while len(levels) > 1:
                 lastkey = levels.pop(0)
                 curdct = curdct.setdefault(lastkey, {})
+            # if reading raw data from consul, it doesn't load lists properly
+            if any(k.endswith(x) for x in ['_inherit', '_modify']):
+                v = json.loads(v)
             if v:
                 curdct[levels.pop(0)] = v
             else:
@@ -182,19 +185,50 @@ def put_to_consul(kvs, puturl):
         puturl = 'http://%s' % puturl
 
     def check_put(url, data):
+        log.debug("consul put", extra=dict(url=url, data=data))
         resp = requests.put(url, data=data)
         if not resp.ok:
             raise APIFail(
                 "failed to PUT to consul: %s" % resp.content)
     for key1 in kvs:
-        assert isinstance(kvs[key1], dict)
-        for key2, val in kvs[key1].items():
-            url = join(puturl, key1, key2)
-            log.debug("consul put", extra=dict(url=url, data=val))
-            # TODO: parallelize?
-            check_put(url, data=str(val))
-        if not kvs[key1]:
-            check_put('%s/' % join(puturl, key1).rstrip('/'), data=None)
+        if isinstance(kvs[key1], dict):
+            for key2, val in kvs[key1].items():
+                url = join(puturl, key1, key2)
+                # TODO: parallelize?
+                check_put(url, data=str(val))
+            if not kvs[key1]:
+                check_put('%s/' % join(puturl, key1).rstrip('/'), data=None)
+        else:
+            url = join(puturl, key1)
+            check_put(url, data=str(kvs[key1]))
+
+
+def parse_raw(jsonfn, basepath):
+    rv = {}  # resulting flattened dict
+    curdct = load_json(jsonfn, basepath)
+    keystack = {jsonfn: {'keys': list(curdct.keys()), 'dict': curdct}}
+    rvkey = jsonfn
+    while keystack:
+        try:
+            k = keystack[rvkey]['keys'].pop()
+        except IndexError:  # basecase: no more keys to pop off stack
+            del keystack[rvkey]
+            if not keystack:
+                break
+            rvkey = next(keystack.iterkeys())
+            curdct = keystack[rvkey]['dict']
+            continue
+
+        v = curdct[k]
+        if isinstance(v, dict):
+            rvkey = join(rvkey, k)
+            keystack[rvkey] = {'keys': list(v.keys()), 'dict': v}
+            curdct = v
+        else:
+            if isinstance(v, list):
+                v = json.dumps(v)
+            rv[join(rvkey, k)] = v
+    return rv
 
 
 def main(ns):
@@ -216,8 +250,12 @@ def main(ns):
         files = [x[:-5] if x.endswith('.json') else x for x in files]
     log.info("Parse files", extra=dict(files=files))
     kvs = {}
-    for jsonfn in files:
-        kvs.update(parse(jsonfn, basepath))
+    if ns.raw:
+        for jsonfn in files:
+            kvs.update(parse_raw(jsonfn, basepath))
+    else:
+        for jsonfn in files:
+            kvs.update(parse(jsonfn, basepath))
     if ns.app:
         subprocess.check_call(
             ' '.join(ns.app[1:]), shell=True, env=kvs[ns.app[0]])
@@ -232,13 +270,17 @@ def main(ns):
 
 
 build_arg_parser = at.build_arg_parser([
-    at.add_argument(
-        '-i', '--inputuri', default=os.environ.get('CONSULCONF_INPUT'), help=(
-            "Where to get key:value configuration.  Can be:"
-            "\n 1) a directory containing json files"
-            "\n 2) a consul url to keys the same config that json files"
-            " would contain.  ie. http://127.0.0.1:8500/v1/kv/conf"),
-        required=not os.environ.get('CONSULCONF_INPUT')),
+    at.group(
+        "\nWhere to get key:value configuration",
+        at.add_argument(
+            '-i', '--inputuri', default=os.environ.get('CONSULCONF_INPUT'),
+            help=(
+                "Where to get key:value configuration.  Can be:"
+                "\n 1) a directory containing json files"
+                "\n 2) a consul url to keys the same config that json files"
+                " would contain.  ie. http://127.0.0.1:8500/v1/kv/conf"),
+            required=not os.environ.get('CONSULCONF_INPUT')),
+    ),
     at.group(
         "\nWhere to send key:value configuration",
         at.mutually_exclusive(
@@ -261,6 +303,11 @@ build_arg_parser = at.build_arg_parser([
         )),
     at.add_argument(
         '--log', action='store_true', help="log what I'm doing to stdout"),
+    at.add_argument(
+        '--raw', action='store_true', help=(
+            "read config data as is from input to output."
+            " (ie don't parse values in _inherit or _modify)"
+        )),
 ])
 
 
