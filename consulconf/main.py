@@ -164,16 +164,20 @@ def put_to_consul(kvs, puturl):
         assert puturl, puturl
         puturl = 'http://%s' % puturl
 
+    def check_put(url, data):
+        resp = requests.put(url, data=data)
+        if not resp.ok:
+            raise APIFail(
+                "failed to PUT to consul: %s" % resp.content)
     for key1 in kvs:
         assert isinstance(kvs[key1], dict)
         for key2, val in kvs[key1].items():
             url = join(puturl, key1, key2)
             log.debug("consul put", extra=dict(url=url, data=val))
             # TODO: parallelize?
-            resp = requests.put(url, data=str(val))
-            if not resp.ok:
-                raise APIFail(
-                    "failed to PUT to consul: %s" % resp.content)
+            check_put(url, data=str(val))
+        if not kvs[key1]:
+            check_put('%s/' % join(puturl, key1).rstrip('/'), data=None)
 
 
 def main(ns):
@@ -201,8 +205,7 @@ def main(ns):
         subprocess.check_call(
             ' '.join(ns.app[1:]), shell=True, env=kvs[ns.app[0]])
     elif ns.dry_run:
-        from pprint import pprint
-        pprint(kvs)
+        print(json.dumps(kvs, indent=4, sort_keys=True))
         return
     elif ns.puturl:
         put_to_consul(kvs, ns.puturl)
