@@ -1,9 +1,10 @@
-Use Consulconf to get or set key:value data from namespaces.
+Use Consulconf to get or set key:value data from json files or consul.
 
-This tool supports the concept of inheritance, where one namespace can
-inherit one or more keys from another namespace.  This is particularly
-useful if, for instance, you wish to manage environment variables for
-several applications that may share certain variables in common.
+This tool supports the concept of inheritance, where one namespace of
+key:value pairs can inherit one or more keys from another namespace.
+This is particularly useful if, for instance, you wish to manage
+environment variables for several applications that may share certain
+variables in common.
 
 You don't necessarily need consul to use this tool.
 
@@ -39,4 +40,13 @@ consulconf -i ./json_files -p 127.0.0.1:8500/v1/kv/my_namespaces
 
 # get namespaces from consul
 consulconf -i http://127.0.0.1:8500/v1/kv/my_namespaces --app ns2 env
+```
+
+Additionally, you can use this tool to raw copy the contents of json
+files into consul.  If you run the below commands and then navigate to
+consul, you will see the data in your json files copied to consul.
+
+```
+consulconf -i ./json_files --dry_run --raw
+consulconf -i ./json_files -p http://127.0.0.1:8500/v1/kv/rawdata --raw
 ```
