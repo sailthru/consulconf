@@ -4,6 +4,7 @@ This script generates application key:value configuration
 """
 import argparse_tools as at
 import base64
+from collections import Counter
 import glob
 import json
 from os.path import basename, join
@@ -260,8 +261,15 @@ def main(ns):
         for jsonfn in files:
             kvs.update(parse(jsonfn, basepath))
     if ns.app:
-        subprocess.check_call(
-            ' '.join(ns.app[1:]), shell=True, env=kvs[ns.app[0]])
+        apps = ns.app[0].split('+')
+        env = dict()
+        [env.update(kvs[app]) for app in apps]
+        keys = Counter([keys for app in apps for keys in kvs[app]])
+        if any(x > 1 for x in keys.values()):
+            log.warn(
+                'Duplicate keys defined',
+                extra=dict(keys=[k for k, v in keys.items() if v > 1]))
+        subprocess.check_call(' '.join(ns.app[1:]), shell=True, env=env)
     elif ns.dry_run:
         print(json.dumps(kvs, indent=4, sort_keys=True))
         return
@@ -299,9 +307,12 @@ build_arg_parser = at.build_arg_parser([
                 '-a', '--app', nargs=at.argparse.REMAINDER, help=(
                     "Load a specific app's namespace into the current shell"
                     " environment and then execute passed in command."
-                    "All remaining args are those you might use to execute"
+                    " All remaining args are those you might use to execute"
                     " your application.  ie: \n"
-                    " --app ns1 echo 123 arg1 --arg2 -c=4"
+                    " --app ns1 echo 123 arg1 --arg2 -c=4\n"
+                    " You can also use the + operator to combine multiple"
+                    " namespaces.  ie: \n"
+                    " --app ns1+test/app20 env"
                 )),
 
         )),
