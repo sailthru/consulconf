@@ -122,7 +122,10 @@ def load_json(jsonfn, basepath):
             if v:
                 curdct[levels.pop(0)] = v
             else:
-                curdct[levels.pop(0)] = {}
+                if any(k.endswith(x) for x in ['_inherit', '_modify']):
+                    curdct[levels.pop(0)] = []
+                else:
+                    curdct[levels.pop(0)] = {}
     else:  # assume its a local filepath
         if not fp.endswith('.json'):
             log.debug(
@@ -290,7 +293,8 @@ build_arg_parser = at.build_arg_parser([
                 '-p', '--puturl', default=os.environ.get('CONSUL_HOST', ''),
                 help=(
                     'Put the results of --dry_run into consul by passing an'
-                    ' HTTP address to PUT to. ie http://127.0.0.1:8500/v1/kv')),
+                    ' HTTP address to PUT to. ie http://127.0.0.1:8500/v1/kv'
+                )),
             at.add_argument(
                 '-a', '--app', nargs=at.argparse.REMAINDER, help=(
                     "Load a specific app's namespace into the current shell"

@@ -24,7 +24,7 @@ def configure_logging(add_handler):
             return super(JsonFormatter, self).format(record)
 
     if not log.handlers:
-        if add_handler == True:
+        if add_handler is True:
             _h = logging.StreamHandler()
             _h.setFormatter(JsonFormatter())
             log.addHandler(_h)

@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import json
 import nose.tools as nt
 from os.path import abspath, dirname
@@ -42,3 +43,41 @@ def test_different_inputs_have_same_rv():
         json.loads(check_output(
             'consulconf -i %s --dry_run' % CWD, shell=True))
     )
+
+
+def test_option_raw():
+    fn = 'test_option_raw'
+    dct = {
+        "test-namespace/_shared/key1": "val11",
+        "test-namespace/_shared2/key2": "val22",
+        "test-namespace/_shared3/key2": "val222",
+        "test-namespace/_shared3/key3": "val3",
+        "test-ns1/key1": "val1",
+        "test/_shared/key1": "val1",
+        "test/_shared2/key2": "val2",
+        "test/app2/_inherit": "[\"_shared\"]",
+        "test/app20/key": "value",
+        "test/app21/_inherit": "[\"_shared\"]",
+        "test/app21/key": "value",
+        "test/app3/_inherit": "[]",
+        "test/app4/_inherit": "[\"_shared2\"]",
+        "test/app5/_inherit": "[\"_shared\", \"_shared2\"]",
+        "test/app6/_inherit": "[\"test-namespace._shared\"]",
+        "test/app7/_inherit": "[\"test-namespace._shared\", \"_shared2\"]",
+        "test/app8/_inherit": "[\"test-namespace._shared2\", \"_shared\"]",
+        "test/app9/_inherit": (
+            "[\"test-namespace._shared3.key2\", \"_shared.key1\"]")
+    }
+    nt.assert_dict_equal.im_class.maxDiff = None
+    nt.assert_dict_equal(
+        json.loads(check_output(
+            'consulconf -i %s --dry_run --raw' % (CWD), shell=True)),
+        dct)
+
+    check_call(
+        'consulconf -i %s -p %s/test-%s --raw' % (CWD, AGENT, fn), shell=True)
+    nt.assert_dict_equal(
+        json.loads(check_output(
+            'consulconf -i %s/test-%s --dry_run --raw'
+            % (AGENT, fn), shell=True)),
+        dct)
