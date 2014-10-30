@@ -3,11 +3,17 @@ import json
 import nose.tools as nt
 from os.path import abspath, dirname
 from subprocess import check_call, check_output
+import requests
 
 CWD = dirname(abspath(__file__))
-AGENT = "http://127.0.0.1:8500/v1/kv"
+AGENT = "http://127.0.0.1:8500/v1/kv/consulconftest"
 
 nt.assert_dict_equal.im_class.maxDiff = None
+
+
+def teardown_module():
+    resp = requests.delete(AGENT, params={'recurse': True})
+    assert resp.ok
 
 
 def test_empty_ns_in_consul():
