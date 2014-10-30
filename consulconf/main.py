@@ -75,8 +75,8 @@ def fetch_values(keys, jsonfn, basepath):
                 vals = load_json(_k, basepath)
             except:
                 raise missing_key_error(_k, keypath, jsonfn, basepath)
-            # if levels:
-            #     _current_jsonfn = levels[0]
+            if levels:
+                 _current_jsonfn = levels[0]
         while levels:
             k = levels.pop(0)
             try:

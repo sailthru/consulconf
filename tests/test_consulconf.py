@@ -64,6 +64,9 @@ def test_inherit():
     nt.assert_dict_equal(data['test/app21'], {'key': 'value', 'key1': 'val1'})
     nt.assert_dict_equal(data['test/app22'], {'key1': 'val1'})
 
+    data = dict(cc.parse('test-ns2', CWD))
+    nt.assert_dict_equal(data['test-ns2'], {u'key1': 'val1'})
+
 
 def test_modify():
     # Not implemented yet
