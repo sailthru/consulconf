@@ -8,6 +8,17 @@ log = logging.getLogger('consulconf')
 
 
 def configure_logging(add_handler):
+    """
+    Configure log records.  If adding a handler, make the formatter print all
+    passed in key:value data.
+        ie log.extra('msg', extra=dict(a=1))
+        generates  'msg  a=1'
+
+    `add_handler` (True, False, None, or Handler instance)
+        if True, add a logging.StreamHandler() instance
+        if False, do not add any handlers.
+        if given a handler instance, add that the the logger
+    """
     _ignore_log_keys = set(logging.makeLogRecord({}).__dict__)
 
     def _json_format(record):
