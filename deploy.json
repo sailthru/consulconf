@@ -1,5 +1,5 @@
 {
-  "cmd": "rm -rf *egg ; python setup.py bdist_egg -d . && mv *egg consulconf.egg ",
+  "cmd": "rm -rf *egg ; ./code_linter.py && python setup.py bdist_egg -d . && mv *egg consulconf.egg ",
   "files": ["consulconf.egg"]
 }
 
