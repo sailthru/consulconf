@@ -8,6 +8,7 @@ CWD = dirname(abspath(__file__))
 AGENT = "http://127.0.0.1:8500/v1/kv"
 
 
+nt.assert_dict_equal.im_class.maxDiff = None
 def test_empty_ns_in_consul():
     fn = 'test_empty_ns_in_consul'
     check_call('consulconf -i %s -p %s/test-%s' % (CWD, AGENT, fn), shell=True)
@@ -22,6 +23,7 @@ def test_empty_ns_in_consul():
             "test/app2": {"key1": "val1"},
             "test/app20": {"key": "value"},
             "test/app21": {"key": "value", "key1": "val1"},
+            "test/app22": {"key1": "val1"},
             "test/app3": {},
             "test/app4": {"key2": "val2"},
             "test/app5": {"key1": "val1", "key2": "val2"},
@@ -59,6 +61,7 @@ def test_option_raw():
         "test/app20/key": "value",
         "test/app21/_inherit": "[\"_shared\"]",
         "test/app21/key": "value",
+        "test/app22/_inherit": "[\"test-ns1\"]",
         "test/app3/_inherit": "[]",
         "test/app4/_inherit": "[\"_shared2\"]",
         "test/app5/_inherit": "[\"_shared\", \"_shared2\"]",

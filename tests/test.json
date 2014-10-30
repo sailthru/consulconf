@@ -13,5 +13,6 @@
   "app8": {"_inherit": ["test-namespace._shared2", "_shared"]},
   "app9": {"_inherit": ["test-namespace._shared3.key2", "_shared.key1"]},
   "app20": {"key": "value"},
-  "app21": {"key": "value", "_inherit": ["_shared"]}
+  "app21": {"key": "value", "_inherit": ["_shared"]},
+  "app22": {"_inherit": ["test-ns1"]}
 }

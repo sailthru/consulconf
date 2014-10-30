@@ -62,6 +62,7 @@ def test_inherit():
 
     nt.assert_dict_equal(data['test/app20'], {'key': 'value'})
     nt.assert_dict_equal(data['test/app21'], {'key': 'value', 'key1': 'val1'})
+    nt.assert_dict_equal(data['test/app22'], {'key1': 'val1'})
 
 
 def test_modify():
