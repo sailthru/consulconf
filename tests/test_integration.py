@@ -7,11 +7,13 @@ from subprocess import check_call, check_output
 CWD = dirname(abspath(__file__))
 AGENT = "http://127.0.0.1:8500/v1/kv"
 
-
 nt.assert_dict_equal.im_class.maxDiff = None
+
+
 def test_empty_ns_in_consul():
     fn = 'test_empty_ns_in_consul'
-    check_call('consulconf -i %s -p %s/test-%s' % (CWD, AGENT, fn), shell=True)
+    check_call('consulconf -i %s -p %s/test-%s --delete'
+               % (CWD, AGENT, fn), shell=True)
     nt.assert_dict_equal(
         json.loads(check_output(
             'consulconf -i %s/test-%s --dry_run' % (AGENT, fn), shell=True)),
@@ -39,7 +41,8 @@ def test_empty_ns_in_consul():
 
 def test_different_inputs_have_same_rv():
     fn = 'test_different_inputs_have_same_rv'
-    check_call('consulconf -i %s -p %s/test-%s' % (CWD, AGENT, fn), shell=True)
+    check_call('consulconf -i %s -p %s/test-%s --delete'
+               % (CWD, AGENT, fn), shell=True)
     nt.assert_dict_equal(
         json.loads(check_output(
             'consulconf -i %s/test-%s --dry_run' % (AGENT, fn), shell=True)),
@@ -80,7 +83,8 @@ def test_option_raw():
         dct)
 
     check_call(
-        'consulconf -i %s -p %s/test-%s --raw' % (CWD, AGENT, fn), shell=True)
+        'consulconf -i %s -p %s/test-%s --raw --delete'
+        % (CWD, AGENT, fn), shell=True)
     nt.assert_dict_equal(
         json.loads(check_output(
             'consulconf -i %s/test-%s --dry_run --raw'

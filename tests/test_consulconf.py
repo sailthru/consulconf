@@ -2,6 +2,7 @@ import nose
 import nose.tools as nt
 from os.path import abspath, dirname
 import consulconf.main as cc
+import requests
 
 CWD = dirname(abspath(__file__))
 
@@ -16,6 +17,13 @@ JSON = {
         "key1": "val", },
     'inherit4': {"app1": {"_inherit": ["key_does_not_exist"]}},
 }
+
+
+def mock_requests_delete(*args, **kwargs):
+    return requests.Response()
+
+_requests_delete = requests.delete
+requests.delete = mock_requests_delete
 
 
 def mock_load_json(jsonfn, basedir):
@@ -81,3 +89,17 @@ def test_namespace():
 
     nt.assert_dict_equal(
         dict(cc.parse('test-namespace', CWD)), {'test-namespace': {}})
+
+
+def test_delete_directories():
+    keys = ['a', 'b', 'c', 'd']
+    delete_excludes = ['a', 'b']
+    puturl = 'http://nourl/'
+
+    nt.assert_set_equal(
+        cc.delete_directories(keys, delete_excludes=[], puturl=puturl),
+        set(keys))
+    nt.assert_set_equal(
+        cc.delete_directories(
+            keys, delete_excludes=delete_excludes, puturl=puturl),
+        set(['c', 'd']))

@@ -76,7 +76,7 @@ def fetch_values(keys, jsonfn, basepath):
             except:
                 raise missing_key_error(_k, keypath, jsonfn, basepath)
             if levels:
-                 _current_jsonfn = levels[0]
+                _current_jsonfn = levels[0]
         while levels:
             k = levels.pop(0)
             try:
@@ -236,6 +236,24 @@ def parse_raw(jsonfn, basepath):
     return rv
 
 
+def delete_directories(keys, delete_excludes, puturl):
+    deleted = set()
+    for k in sorted(keys):
+        if any(k.startswith(x) for x in delete_excludes):
+            continue
+        if any(k.startswith(x) for x in deleted):
+            continue
+        url = join(puturl, k)
+        log.warn('consul delete', extra=dict(url=url))
+        resp = requests.delete(url, params={'recurse': True})
+        if not resp.ok:
+            msg = "Could not delete directory from Consul"
+            log.error(msg, extra=dict(url=url))
+            raise APIFail('%s: %s' % (msg, resp.content))
+        deleted.add(k)
+    return deleted
+
+
 def main(ns):
     if ns.log:
         configure_logging(ns.log)
@@ -261,6 +279,10 @@ def main(ns):
     else:
         for jsonfn in files:
             kvs.update(parse(jsonfn, basepath))
+    return process_output(ns, kvs, basepath)
+
+
+def process_output(ns, kvs, basepath):
     if ns.app:
         apps = ns.app[0].split('+')
         env = dict()
@@ -275,6 +297,10 @@ def main(ns):
         print(json.dumps(kvs, indent=4, sort_keys=True))
         return
     elif ns.puturl:
+        if ns.delete:
+            delete_directories(
+                keys=kvs.keys(), delete_excludes=ns.delete_excludes,
+                puturl=ns.puturl)
         put_to_consul(kvs, ns.puturl)
     else:
         raise NotImplementedError(
@@ -324,6 +350,24 @@ build_arg_parser = at.build_arg_parser([
             "read config data as is from input to output."
             " (ie don't parse values in _inherit or _modify)"
         )),
+    at.add_argument(
+        '--delete', action='store_true', help=(
+            "clean the output location of any data before pushing to it.  This"
+            " is useful in conjunction with --puturl to ensure a clean"
+            " namespace"
+        )),
+    at.add_argument(
+        '--delete_excludes', nargs='+', default=[], help=(
+            "If specifying --delete, do not delete the specific namespaces"
+            "under your --puturl that match the given prefix(es). "
+            " ie. "
+            "'--puturl .../a --delete --delete_excludes myapp-ns1 myapp3'"
+            " will delete everything under /a except myapp-ns1* and myapp-ns3*"
+            ". This functionality is limited to searching only the first level"
+            " of namespaces you defined, so be sure to test that it does what"
+            " you expect!"
+        )),
+
 ])
 
 
