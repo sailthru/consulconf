@@ -307,6 +307,12 @@ def process_output(ns, kvs, basepath):
             "Unclear what to do.  you didn't supply a --puturl or --dry_run")
 
 
+def to_url(inpt):
+    if not inpt.startswith('http://'):
+        return "http://%s" % inpt
+    return inpt
+
+
 build_arg_parser = at.build_arg_parser([
     at.group(
         "\nWhere to get key:value configuration",
@@ -325,7 +331,8 @@ build_arg_parser = at.build_arg_parser([
             at.add_argument('--dry_run', action='store_true', help=(
                 "Print the resulting k:v namespaces")),
             at.add_argument(
-                '-p', '--puturl', default=os.environ.get('CONSUL_HOST', ''),
+                '-p', '--puturl', type=to_url,
+                default=os.environ.get('CONSUL_HOST', ''),
                 help=(
                     'Put the results of --dry_run into consul by passing an'
                     ' HTTP address to PUT to. ie http://127.0.0.1:8500/v1/kv'
