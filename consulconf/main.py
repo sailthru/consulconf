@@ -255,8 +255,7 @@ def delete_directories(keys, delete_excludes, puturl):
 
 
 def main(ns):
-    if ns.log:
-        configure_logging(ns.log)
+    configure_logging(ns.log)
 
     if ns.inputuri.startswith('http://'):
         basepath = '%s/' % ns.inputuri.rstrip('/')
@@ -292,7 +291,10 @@ def process_output(ns, kvs, basepath):
             log.warn(
                 'Duplicate keys defined',
                 extra=dict(keys=[k for k, v in keys.items() if v > 1]))
-        subprocess.check_call(' '.join(ns.app[1:]), shell=True, env=env)
+        try:
+            subprocess.check_call(' '.join(ns.app[1:]), shell=True, env=env)
+        except:
+            log.error("Command failed", extra=dict(cmd=' '.join(ns.app[1:])))
     elif ns.dry_run:
         print(json.dumps(kvs, indent=4, sort_keys=True))
         return
