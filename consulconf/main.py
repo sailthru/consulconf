@@ -7,7 +7,7 @@ import base64
 from collections import Counter
 import glob
 import json
-from os.path import basename, join
+from os.path import basename, join, dirname
 import os
 import re
 import requests
@@ -243,6 +243,7 @@ def delete_directories(keys, delete_excludes, puturl):
             continue
         if any(k.startswith(x) for x in deleted):
             continue
+        k = dirname(k) or k
         url = join(puturl, k)
         log.warn('consul delete', extra=dict(url=url))
         resp = requests.delete(url, params={'recurse': True})
