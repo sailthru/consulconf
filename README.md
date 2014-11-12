@@ -4,7 +4,10 @@ This tool supports the concept of inheritance, where one namespace of
 key:value pairs can inherit one or more keys from another namespace.
 This is particularly useful if, for instance, you wish to manage
 environment variables for several applications that may share certain
-variables in common.
+variables in common.  Currently, though, parent namespaces (ie any
+namespace with children) cannot inherit from other namespaces.  It may
+be worth changing this behavior if someone can come up with a good
+reason.
 
 You don't necessarily need consul to use this tool.
 
