@@ -12,6 +12,7 @@ import os
 import re
 import requests
 import subprocess
+import sys
 
 from consulconf import log, configure_logging
 
@@ -296,6 +297,7 @@ def process_output(ns, kvs, basepath):
             subprocess.check_call(' '.join(ns.app[1:]), shell=True, env=env)
         except:
             log.error("Command failed", extra=dict(cmd=' '.join(ns.app[1:])))
+            sys.exit(1)
     elif ns.dry_run:
         print(json.dumps(kvs, indent=4, sort_keys=True))
         return
