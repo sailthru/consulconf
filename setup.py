@@ -8,7 +8,7 @@ except ImportError:
 
 setup(
     name='consulconf',
-    version='0.0.8',
+    version='0.0.9.dev0',
     description=('Code to configure consul key:value store for applications'),
 
     author='Alex Gaudio',
