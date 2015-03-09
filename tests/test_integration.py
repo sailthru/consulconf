@@ -45,6 +45,11 @@ def test_empty_ns_in_consul():
     )
 
 
+def test_filterns():
+    fn = 'test_filterns'
+    raise NotImplemented
+
+
 def test_different_inputs_have_same_rv():
     fn = 'test_different_inputs_have_same_rv'
     check_call('consulconf -i %s -p %s/test-%s --delete'

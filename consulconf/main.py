@@ -298,7 +298,11 @@ def process_output(ns, kvs, basepath):
         except:
             log.error("Command failed", extra=dict(cmd=' '.join(ns.app[1:])))
             sys.exit(1)
-    elif ns.dry_run:
+        return
+    if ns.filterns:
+        kvs = {k: v for k, v in kvs.items() if re.search(ns.filterns, k)}
+
+    if ns.dry_run:
         print(json.dumps(kvs, indent=4, sort_keys=True))
         return
     elif ns.puturl:
@@ -334,7 +338,7 @@ build_arg_parser = at.build_arg_parser([
         "\nWhere to send key:value configuration",
         at.mutually_exclusive(
             at.add_argument('--dry_run', action='store_true', help=(
-                "Print the resulting k:v namespaces")),
+                "Print the resulting flattened k:v namespaces")),
             at.add_argument(
                 '-p', '--puturl', type=to_url,
                 default=os.environ.get('CONSUL_HOST', ''),
@@ -378,6 +382,11 @@ build_arg_parser = at.build_arg_parser([
             ". This functionality is limited to searching only the first level"
             " of namespaces you defined, so be sure to test that it does what"
             " you expect!"
+        )),
+    at.add_argument(
+        '--filterns', nargs='?', help=(
+            'Pass a regular expression that selects only the namespaces you'
+            ' care to see.  Applies to --dry_run and --puturl, for instance'
         )),
 
 ])
