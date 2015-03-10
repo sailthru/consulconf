@@ -2,8 +2,8 @@ try:
     from distutils.core import setup
     from setuptools import find_packages
 except ImportError:
-    print ("Please install Distutils and setuptools"
-           " before installing this package")
+    print("Please install Distutils and setuptools"
+          " before installing this package")
     raise
 
 setup(
@@ -15,10 +15,10 @@ setup(
     author_email='agaudio@sailthru.com',
     url='https://github.com/sailthru/consulconf',
 
-    install_requires = ['argparse_tools', 'requests'],
+    install_requires=['argparse_tools', 'requests', 'future'],
     packages=find_packages(),
 
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'consulconf = consulconf.__main__:go',
         ],

@@ -3,6 +3,7 @@ import nose.tools as nt
 from os.path import abspath, dirname
 import consulconf.main as cc
 import requests
+from consulconf import configure_logging
 
 CWD = dirname(abspath(__file__))
 
@@ -18,19 +19,29 @@ JSON = {
     'inherit4': {"app1": {"_inherit": ["key_does_not_exist"]}},
 }
 
-
-def mock_requests_delete(*args, **kwargs):
-    return requests.Response()
-
-_requests_delete = requests.delete
-requests.delete = mock_requests_delete
+GLOBAL_TEST_INFO = {}
 
 
-def mock_load_json(jsonfn, basedir):
-    return JSON.get(jsonfn) or _load_json(jsonfn, CWD)
+def setup_module():
+    configure_logging(True)
 
-_load_json = cc.load_json
-cc.load_json = mock_load_json
+    def mock_requests_delete(*args, **kwargs):
+        r = requests.Response()
+        r.status_code = 200
+        return r
+    GLOBAL_TEST_INFO['_requests_delete'] = requests.delete
+    requests.delete = mock_requests_delete
+
+    GLOBAL_TEST_INFO['_load_json'] = cc.load_json
+
+    def mock_load_json(jsonfn, basedir):
+        return JSON.get(jsonfn) or GLOBAL_TEST_INFO['_load_json'](jsonfn, CWD)
+    cc.load_json = mock_load_json
+
+
+def teardown_module():
+    requests.delete = GLOBAL_TEST_INFO['_requests_delete']
+    cc.load_json = GLOBAL_TEST_INFO['_load_json']
 
 
 def test_inherit_dup_key():
@@ -56,7 +67,7 @@ def test_inherit():
     for key in data:
         nt.assert_regexp_matches(key, r'^test.*')
     for app in ['test/app2']:
-        nt.assert_equal(data[app], {u'key1': u'val1'})
+        nt.assert_equal(data[app], {'key1': 'val1'})
 
     # _shared should not get included in apps that define _inherit
     for app in ['test', 'test/app1', 'test/app3']:
@@ -73,7 +84,7 @@ def test_inherit():
     nt.assert_dict_equal(data['test/app22'], {'key1': 'val1'})
 
     data = dict(cc.parse('test-ns2', CWD))
-    nt.assert_dict_equal(data['test-ns2'], {u'key1': 'val1'})
+    nt.assert_dict_equal(data['test-ns2'], {'key1': 'val1'})
 
 
 def test_modify():
@@ -85,7 +96,7 @@ def test_namespace():
     # test-namespace should not exist
     # test-ns1 should generate test/ns1: {key1: val1}
     nt.assert_dict_equal(
-        dict(cc.parse('test-ns1', CWD)), {'test-ns1': {u'key1': u'val1'}})
+        dict(cc.parse('test-ns1', CWD)), {'test-ns1': {'key1': 'val1'}})
 
     nt.assert_dict_equal(
         dict(cc.parse('test-namespace', CWD)), {'test-namespace': {}})

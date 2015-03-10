@@ -1,7 +1,7 @@
 """
 Convert a directory into an executable
 """
-from main import build_arg_parser, main
+from consulconf.main import build_arg_parser, main
 
 
 def go():

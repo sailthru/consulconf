@@ -2,6 +2,7 @@
 """
 This script generates application key:value configuration
 """
+from future.builtins import str
 import argparse_tools as at
 import base64
 from collections import Counter
@@ -41,10 +42,11 @@ def missing_key_error(k, keypath, jsonfn, basepath):
     return KeyError(msg)
 
 
-def unrecognized_value_error(keypath, jsonfn, basepath):
+def unrecognized_value_error(keypath, jsonfn, basepath, value_type):
     msg = "Unrecognized values from key"
     log.error(
-        msg, extra=dict(keypath=keypath, jsonfn=jsonfn, basepath=basepath))
+        msg, extra=dict(keypath=keypath, jsonfn=jsonfn, basepath=basepath,
+                        value_type=value_type))
     return ValueError(msg)
 
 
@@ -89,12 +91,16 @@ def fetch_values(keys, jsonfn, basepath):
         if isinstance(vals, dict):
             verify_nodups(set1=union, set2=vals)
             union.update(vals)
-        elif isinstance(vals, (str, unicode)):
-            verify_nodups(set1=union, set2=[vals])
-            union.update({k: vals})
         else:
-            raise unrecognized_value_error(
-                keypath=keypath, jsonfn=_current_jsonfn, basepath=basepath)
+            if isinstance(vals, bytes):
+                vals = vals.decode()  # cast to str
+            if isinstance(vals, (str, bytes)):
+                verify_nodups(set1=union, set2=[vals])
+                union.update({k: vals})
+            else:
+                raise unrecognized_value_error(
+                    keypath=keypath, jsonfn=_current_jsonfn, basepath=basepath,
+                    value_type=type(vals))
     return {k: str(v) for k, v in union.items()}
 
 
@@ -110,6 +116,8 @@ def load_json(jsonfn, basepath):
             (re.sub('.*?/%s/(.*?)/?$' % jsonfn, r'\1', x['Key']),
              base64.b64decode(x['Value'] or ''))
             for x in resp.json())
+        _jsondata = ((k, v.decode() if isinstance(v, bytes) else v)
+                     for k, v in _jsondata)
         jsondata = {}
         for k, v in _jsondata:
             if not k:
@@ -192,6 +200,10 @@ def put_to_consul(kvs, puturl):
 
     def check_put(url, data):
         log.debug("consul put", extra=dict(url=url, data=data))
+        if isinstance(data, bytes):
+            data = data.decode()
+        elif data is None:
+            data = ""
         resp = requests.put(url, data=data)
         if not resp.ok:
             raise APIFail(
@@ -201,7 +213,7 @@ def put_to_consul(kvs, puturl):
             for key2, val in kvs[key1].items():
                 url = join(puturl, key1, key2)
                 # TODO: parallelize?
-                check_put(url, data=str(val))
+                check_put(url, data=val)
             if not kvs[key1]:
                 check_put('%s/' % join(puturl, key1).rstrip('/'), data=None)
         else:
@@ -221,7 +233,7 @@ def parse_raw(jsonfn, basepath):
             del keystack[rvkey]
             if not keystack:
                 break
-            rvkey = next(keystack.iterkeys())
+            rvkey = next(iter(keystack.keys()))
             curdct = keystack[rvkey]['dict']
             continue
 
@@ -248,7 +260,7 @@ def delete_directories(keys, delete_excludes, puturl):
         url = join(puturl, k)
         log.warn('consul delete', extra=dict(url=url))
         resp = requests.delete(url, params={'recurse': True})
-        if not resp.ok:
+        if not resp.status_code == 200:
             msg = "Could not delete directory from Consul"
             log.error(msg, extra=dict(url=url))
             raise APIFail('%s: %s' % (msg, resp.content))
