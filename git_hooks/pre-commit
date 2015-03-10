@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -e
+set -u
+
+ROOT=$(cd $( dirname $(dirname $(dirname $0))) && pwd)
+echo $ROOT
+
+echo -e "\nPython PEP8 checks:"
+git ls-files |grep -E '.*\.py$' | xargs -P0 -I{} pep8 '{}'
+echo -e "\nPython PyFlakes checks:"
+git ls-files |grep -E '.*\.py$' | xargs -P0 -I{} pyflakes '{}'
+echo passed!
+

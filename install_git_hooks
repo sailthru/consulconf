@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -e
+set -u
+
+ROOT=$(cd $(dirname $0) && pwd)
+
+
+ls git_hooks | xargs -I{} sh -c 'ln -s ../../git_hooks/{} .git/hooks/{}'
