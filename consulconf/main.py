@@ -313,7 +313,7 @@ def process_output(ns, kvs, basepath):
         put_to_consul(kvs, ns.puturl)
     else:
         raise NotImplementedError(
-            "Unclear what to do.  you didn't supply a --puturl or --dry_run")
+            "Unclear what to do.  You didn't supply an output option")
 
 
 def to_url(inpt):
