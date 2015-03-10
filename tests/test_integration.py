@@ -45,6 +45,19 @@ def test_empty_ns_in_consul():
     )
 
 
+def test_filterns():
+    fn = 'test_filterns'
+    dct = {
+        u'test/app3': {},
+        u'test/app4': {u'key2': u'val2'},
+        u'test/app5': {u'key1': u'val1', u'key2': u'val2'}}
+    nt.assert_dict_equal(
+        json.loads(check_output(
+            "consulconf -i %s --dry_run --filterns '^.*app[345]$'" % (CWD),
+            shell=True)),
+        dct)
+
+
 def test_different_inputs_have_same_rv():
     fn = 'test_different_inputs_have_same_rv'
     check_call('consulconf -i %s -p %s/test-%s --delete'
