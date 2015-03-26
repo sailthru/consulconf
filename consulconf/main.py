@@ -16,6 +16,7 @@ import subprocess
 import sys
 
 from consulconf import log, configure_logging
+from consulconf import util
 
 
 class DuplicateKeyError(Exception):
@@ -104,6 +105,7 @@ def fetch_values(keys, jsonfn, basepath):
     return {k: str(v) for k, v in union.items()}
 
 
+@util.cached
 def load_json(jsonfn, basepath):
     fp = join(basepath, jsonfn)
     log.debug('load json data', extra=dict(basepath=fp))
