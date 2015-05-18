@@ -301,6 +301,8 @@ def process_output(ns, kvs, basepath):
     if ns.app:
         apps = ns.app[0].split('+')
         env = dict()
+        if ns.inherit_env:
+            env.update(os.environ)
         [env.update(kvs[app]) for app in apps]
         keys = Counter([keys for app in apps for keys in kvs[app]])
         if any(x > 1 for x in keys.values()):
@@ -402,7 +404,11 @@ build_arg_parser = at.build_arg_parser([
             'Pass a regular expression that selects only the namespaces you'
             ' care to see.  Applies to --dry_run and --puturl, for instance'
         )),
-
+    at.add_argument(
+        '--inherit_env', action='store_true', help=(
+            "Only useful for --app.  If specified, do not remove the"
+            " currently known environment variables available to consulconf"
+            " before spinning up a subshell")),
 ])
 
 

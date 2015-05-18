@@ -116,3 +116,14 @@ def test_option_raw():
             'consulconf -i %s/test-%s --dry_run --raw'
             % (AGENT, fn), shell=True).decode()),
         dct)
+
+
+def test_inherit_env():
+    rv1 = check_output(
+        'INHERITTEST=123 consulconf -i %s --inherit_env --app test/app1 env'
+        % CWD, shell=True).decode()
+    rv2 = check_output(
+        'INHERITTEST=123 consulconf -i %s --app test/app1 env'
+        % CWD, shell=True).decode()
+    nt.assert_true("INHERITTEST=123" in (x.strip() for x in rv1.split()))
+    nt.assert_false("INHERITTEST=123" in (x.strip() for x in rv2.split()))
